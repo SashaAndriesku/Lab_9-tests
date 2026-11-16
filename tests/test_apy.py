@@ -59,6 +59,7 @@ def test_api_rental_lifecycle_and_stock_conflict(client):
     code = f"API-EQ-{uuid4().hex[:10]}"
     eq = client.post("/equipment", json={"code": code, "daily_rate": 1000, "stock": 2}).json()
 
+    # Успішне створення оренди в межах stock (2 <= 2)
     rent_resp = client.post(
         "/rentals",
         json={
@@ -74,12 +75,13 @@ def test_api_rental_lifecycle_and_stock_conflict(client):
     assert rental["total"] == 6000
     assert rental["status"] == "Active"
 
+    # Запит понад доступний stock (3 > 2) -> 409 Conflict
     conflict_resp = client.post(
         "/rentals",
         json={
             "reference": f"REF-{uuid4().hex[:10]}",
             "equipment_id": eq["id"],
-            "quantity": 1,
+            "quantity": 3,
             "days": 2,
             "premium": False,
         },
@@ -87,6 +89,7 @@ def test_api_rental_lifecycle_and_stock_conflict(client):
     assert conflict_resp.status_code == 409
     assert conflict_resp.json()["code"] == "RENTAL_CONFLICT"
 
+    # Повернення оренди
     return_resp = client.post(f"/rentals/{rental['id']}/return", json={"overdue_days": 0})
     assert return_resp.status_code == 200
     assert return_resp.json()["status"] == "Returned"
