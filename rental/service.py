@@ -29,7 +29,7 @@ class RentalService:
     def calculate_total(self, daily_rate, quantity, days, premium=False):
         validate(daily_rate, quantity, days, premium)
         subtotal = daily_rate * quantity * days
-        discount = 0  # Навмисна помилка для перевірки CI pipeline
+        discount = 10 if days >= 7 else 0
         return subtotal - subtotal * discount // 100
 
     def calculate_late_fee(self, daily_rate, quantity, days, overdue_days, premium=False):
